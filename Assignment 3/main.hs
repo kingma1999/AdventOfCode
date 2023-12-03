@@ -5,11 +5,15 @@ import Data.List.Split
 import Debug.Trace
 
 data Coord = Coord { xloc :: Int,
-                        yloc :: Int} deriving Show
+                        yloc :: Int} deriving (Show, Eq)
+
+data Symb = Symb { char :: Char,
+                    coordS :: Coord,
+                    parts :: [Int]} deriving (Show, Eq)
 
 data EnginePart = EnginePart { partNumber :: Int,
-                                adjacentSymbols :: [Char],
-                                coord :: Coord} deriving Show
+                                adjacentSymbols :: [Symb],
+                                coord :: Coord} deriving (Show, Eq)
 
 main = do  
     handle <- openFile "input.txt" ReadMode
@@ -17,8 +21,13 @@ main = do
     let linesOfFiles = lines contents
         partsList = findPartsY linesOfFiles (Coord 0 0)
         som = sum (validPartNums partsList)
-    print partsList
+        symbPartsList = takePartNumsDown partsList
+        symbsList = makeSymbsList symbPartsList
+        symbsWithParts = symblifier symbsList
+        somGear = sum (gearMultiply symbsWithParts)
+    print symbsWithParts
     print som
+    print somGear
     hClose handle
 
 list2D :: [[Char]] -> Coord -> Char
@@ -54,16 +63,16 @@ partNumHelper (x:xs)
 partNum :: [Char] -> Int
 partNum input = read (partNumHelper input)
 
-fASX :: [Char] -> [Char]
-fASX [] = []
-fASX (x:xs) 
-    | isSymb x = x : fASX xs
-    | otherwise = fASX xs
+fASX :: [Char] -> Coord -> [Symb]
+fASX [] _ = []
+fASX (x:xs) loc
+    | isSymb x = Symb x loc [] : fASX xs (loc {xloc = xloc loc + 1})
+    | otherwise = fASX xs (loc {xloc = xloc loc + 1})
 
-findAllSymbols :: [[Char]] -> [Char]
-findAllSymbols (y:ys) 
-    | ys == [] = fASX y
-    | otherwise = fASX y ++ findAllSymbols ys
+findAllSymbols :: [[Char]] -> Coord -> [Symb]
+findAllSymbols (y:ys) loc
+    | ys == [] = fASX y loc
+    | otherwise = fASX y loc ++ findAllSymbols ys (loc {yloc = yloc loc + 1})
 
 slice :: Int -> Int -> [a] -> [a]
 slice from to xs = take (to - from + 1) (drop from xs)
@@ -78,9 +87,9 @@ cutX :: [[Char]] -> Coord -> Int -> [[Char]]
 cutX [] _ _ = []
 cutX (y:ys) loc len = slice (boundsCheck (xloc loc - 1) (length y)) (boundsCheck (xloc loc + len) (length y)) y : cutX ys loc len
 
-findSymbols :: [[Char]] -> Coord -> Int -> [Char]
+findSymbols :: [[Char]] -> Coord -> Int -> [Symb]
 findSymbols [] _ _ = []
-findSymbols input loc len = findAllSymbols xycut
+findSymbols input loc len = findAllSymbols xycut (loc {yloc = (boundsCheck (yloc loc - 1) (length input)), xloc = (boundsCheck (xloc loc - 1) (length (input!!0)))})
     where 
         ycut = slice (boundsCheck (yloc loc - 1) (length input)) (boundsCheck (yloc loc + 1) (length input)) input
         xycut = cutX ycut loc len
@@ -102,3 +111,31 @@ validPartNums [] = []
 validPartNums (x:xs)
     | adjacentSymbols x == [] = validPartNums xs
     | otherwise = partNumber x : validPartNums xs
+
+tPNDHelper :: [Symb] -> Int -> [Symb]
+tPNDHelper [] _ = []
+tPNDHelper (x:xs) int = x {parts = [int]} : tPNDHelper xs int
+
+takePartNumsDown :: [EnginePart] -> [EnginePart]
+takePartNumsDown [] = []
+takePartNumsDown (x:xs) = x {adjacentSymbols = tPNDHelper (adjacentSymbols x) (partNumber x)} : takePartNumsDown xs
+
+makeSymbsList :: [EnginePart] -> [Symb]
+makeSymbsList [] = []
+makeSymbsList (ePart:eParts) = (adjacentSymbols ePart) ++ (makeSymbsList eParts)
+
+symblifierHelper :: [Symb] -> Symb -> Symb
+symblifierHelper [] ref = ref
+symblifierHelper (symb:symbs) ref 
+    | coordS symb == coordS ref = symblifierHelper symbs (ref {parts = (parts ref) ++ (parts symb)})
+    | otherwise = symblifierHelper symbs ref
+
+symblifier :: [Symb] -> [Symb]
+symblifier [] = []
+symblifier (symb:symbs) = symblifierHelper symbs symb : symblifier symbs
+
+gearMultiply :: [Symb] -> [Int]
+gearMultiply [] = []
+gearMultiply (symb:symbs) 
+    | char symb == '*' && (length (parts symb)) == 2 = ((parts symb)!!0) * ((parts symb)!!1) : gearMultiply symbs
+    | otherwise = gearMultiply symbs
