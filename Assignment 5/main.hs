@@ -25,7 +25,7 @@ data Range = Range {
 } deriving (Show, Eq)
 
 main = do  
-    handle <- openFile "inputTest.txt" ReadMode
+    handle <- openFile "input.txt" ReadMode
     contents <- hGetContents handle
     print "starting"
     let linesOfFiles = lines contents
@@ -101,21 +101,21 @@ isInRange seed ref
 isInRangeRev2 :: Seed -> Map -> Integer
 isInRangeRev2 seed ref
     | fin >= source ref && fin < (source ref) + (range ref) = (destination ref) + ((fin) - (source ref))
-    | otherwise = fin
+    | otherwise = -1
     where 
         fin = last $ nums seed
 
 doMapCol :: Seed -> [Map] -> Integer
 doMapCol seed [] = last $ nums seed
 doMapCol seed (ref:refs)
-    | (isInRangeRev2 seed ref) == last (nums seed) = doMapCol seed refs
+    | (isInRangeRev2 seed ref) == -1 = doMapCol seed refs
     | otherwise = isInRangeRev2 seed ref
 
 doMaps :: Seed -> [MapCol] -> [Integer]
 doMaps _ [] = []
 doMaps seed (ref:refs) = intermediate : doMaps (seed {nums = (nums seed) ++ [intermediate]}) refs
     where
-        intermediate = doMapCol seed (maps ref)
+        intermediate = (doMapCol seed (maps ref))
 
 doMapsWrapper :: [Seed] -> [MapCol] -> [Seed]
 doMapsWrapper [] _ = []
@@ -135,25 +135,6 @@ parseMapColRev ((string:locs):strings) = parseMapColRev strings ++ [MapCol name 
     where
         name = head (words string)
 
--- isInRangeRev :: Seed -> Map -> Integer
--- isInRangeRev seed ref
---     | fin >= source ref && fin < (source ref) + (range ref) = (destination ref) + ((fin) - (source ref))
---     | otherwise = fin
---     where 
---         fin = last $ nums seed
-
--- doMapColRev :: Seed -> [Map] -> Integer
--- doMapColRev seed [] = last $ nums seed
--- doMapColRev seed (ref:refs)
---     | (isInRangeRev seed ref) == last (nums seed) = doMapColRev seed refs
---     | otherwise = isInRangeRev seed ref
-
--- doMapsRev :: Seed -> [MapCol] -> [Integer]
--- doMapsRev _ [] = []
--- doMapsRev seed (ref:refs) = intermediate : doMapsRev (seed {nums = (nums seed) ++ [intermediate]}) refs
---     where
---         intermediate = doMapColRev seed (maps ref)
-
 isInRangeRev :: Integer -> [Range] -> Bool
 isInRangeRev _ [] = False
 isInRangeRev check (ref:refs)
@@ -162,8 +143,9 @@ isInRangeRev check (ref:refs)
 
 lowestFinderRev :: [MapCol] -> Seed -> [Range] -> Integer
 lowestFinderRev maps seed ref
-    | isInRangeRev (last performance) ref = trace (show performance) (head performance)
+    | isInRangeRev (last performance) ref = (temp)
     | otherwise = (lowestFinderRev maps (seed {nums = [printNum]}) ref)
         where 
             performance = (doMaps seed maps)
-            printNum = ((nums seed)!!0) + 1
+            temp = ((nums seed)!!0)
+            printNum = temp + 1
