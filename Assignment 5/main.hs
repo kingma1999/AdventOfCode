@@ -5,13 +5,13 @@ import Data.List.Split
 import Debug.Trace
 
 data Seed = Seed { 
-    nums :: [Int]
+    nums :: [Integer]
 } deriving (Show, Eq)
 
 data Map = Map {
-    source :: Int,
-    destination :: Int,
-    range :: Int
+    source :: Integer,
+    destination :: Integer,
+    range :: Integer
 } deriving (Show, Eq)
 
 data MapCol = MapCol {
@@ -20,12 +20,12 @@ data MapCol = MapCol {
 } deriving (Show, Eq)
 
 data Range = Range {
-    low :: Int,
-    high :: Int
+    low :: Integer,
+    high :: Integer
 } deriving (Show, Eq)
 
 main = do  
-    handle <- openFile "input.txt" ReadMode
+    handle <- openFile "inputTest.txt" ReadMode
     contents <- hGetContents handle
     print "starting"
     let linesOfFiles = lines contents
@@ -47,6 +47,7 @@ main = do
     -- print closest
     -- print ""
     -- print rangeSeeds
+    print reverseMaps
     print ranges
     print ("final: " ++ show (score))
     hClose handle
@@ -58,11 +59,11 @@ rangeCollector (num1:num2:nums) = trace ("Oehh, betah") ([Range int1 (int1 + int
         int1 = read num1
         int2 = read num2
 
-seedMapper :: [Int] -> [Seed]
+seedMapper :: [Integer] -> [Seed]
 seedMapper [] =[]
 seedMapper (num:nums) = Seed [num] : seedMapper nums
 
-parseSeedRangesRev :: [String] -> [Int]
+parseSeedRangesRev :: [String] -> [Integer]
 parseSeedRangesRev [] = []
 parseSeedRangesRev (num1:num2:nums) = trace ("Oehh, betah") ([int1..(int1 + int2 - 1)] ++ parseSeedRangesRev nums)
     where
@@ -90,27 +91,27 @@ parseMapCol ((string:locs):strings) = MapCol name (map parseMap locs) : parseMap
     where
         name = trace ("lmfao") (head (words string))
 
-isInRange :: Seed -> Map -> Int
+isInRange :: Seed -> Map -> Integer
 isInRange seed ref
     | fin >= source ref && fin < (source ref) + (range ref) = (destination ref) + ((fin) - (source ref))
     | otherwise = fin
     where 
         fin = last $ nums seed
 
-isInRangeRev2 :: Seed -> Map -> Int
+isInRangeRev2 :: Seed -> Map -> Integer
 isInRangeRev2 seed ref
     | fin >= source ref && fin < (source ref) + (range ref) = (destination ref) + ((fin) - (source ref))
     | otherwise = fin
     where 
         fin = last $ nums seed
 
-doMapCol :: Seed -> [Map] -> Int
+doMapCol :: Seed -> [Map] -> Integer
 doMapCol seed [] = last $ nums seed
 doMapCol seed (ref:refs)
     | (isInRangeRev2 seed ref) == last (nums seed) = doMapCol seed refs
     | otherwise = isInRangeRev2 seed ref
 
-doMaps :: Seed -> [MapCol] -> [Int]
+doMaps :: Seed -> [MapCol] -> [Integer]
 doMaps _ [] = []
 doMaps seed (ref:refs) = intermediate : doMaps (seed {nums = (nums seed) ++ [intermediate]}) refs
     where
@@ -120,7 +121,7 @@ doMapsWrapper :: [Seed] -> [MapCol] -> [Seed]
 doMapsWrapper [] _ = []
 doMapsWrapper (seed:seeds) refs = Seed ([last (nums seed)] ++ (doMaps seed refs)) : doMapsWrapper seeds refs
 
-getLoc :: Seed -> Int
+getLoc :: Seed -> Integer
 getLoc seed = last $ nums seed
 
 parseMapRev :: String -> Map
@@ -134,34 +135,34 @@ parseMapColRev ((string:locs):strings) = parseMapColRev strings ++ [MapCol name 
     where
         name = head (words string)
 
--- isInRangeRev :: Seed -> Map -> Int
+-- isInRangeRev :: Seed -> Map -> Integer
 -- isInRangeRev seed ref
 --     | fin >= source ref && fin < (source ref) + (range ref) = (destination ref) + ((fin) - (source ref))
 --     | otherwise = fin
 --     where 
 --         fin = last $ nums seed
 
--- doMapColRev :: Seed -> [Map] -> Int
+-- doMapColRev :: Seed -> [Map] -> Integer
 -- doMapColRev seed [] = last $ nums seed
 -- doMapColRev seed (ref:refs)
 --     | (isInRangeRev seed ref) == last (nums seed) = doMapColRev seed refs
 --     | otherwise = isInRangeRev seed ref
 
--- doMapsRev :: Seed -> [MapCol] -> [Int]
+-- doMapsRev :: Seed -> [MapCol] -> [Integer]
 -- doMapsRev _ [] = []
 -- doMapsRev seed (ref:refs) = intermediate : doMapsRev (seed {nums = (nums seed) ++ [intermediate]}) refs
 --     where
 --         intermediate = doMapColRev seed (maps ref)
 
-isInRangeRev :: Int -> [Range] -> Bool
+isInRangeRev :: Integer -> [Range] -> Bool
 isInRangeRev _ [] = False
 isInRangeRev check (ref:refs)
     | check >= low ref && check <= high ref = True
     | otherwise = isInRangeRev check refs
 
-lowestFinderRev :: [MapCol] -> Seed -> [Range] -> Int
+lowestFinderRev :: [MapCol] -> Seed -> [Range] -> Integer
 lowestFinderRev maps seed ref
-    | isInRangeRev (last performance) ref = head performance
+    | isInRangeRev (last performance) ref = trace (show performance) (head performance)
     | otherwise = (lowestFinderRev maps (seed {nums = [printNum]}) ref)
         where 
             performance = (doMaps seed maps)
