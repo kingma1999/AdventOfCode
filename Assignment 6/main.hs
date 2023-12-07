@@ -13,10 +13,6 @@ main = do
         result = foldr (*) 1 $ map length $ mapOptions distances times
         mergeTimes = mapRead [filter (/=' ') (unwords $ tail $ words (linesOfFiles!!0))]
         mergeDistances = mapRead [filter (/=' ') (unwords $ tail $ words (linesOfFiles!!1))]
-        -- mergeResult = foldr (*) 1 $ map length $ mapOptions mergeDistances mergeTimes
-        -- test = abcIntersect (mergeDistances!!0) (mergeTimes!!0) 1
-        -- test2 = abcIntersectInv (mergeDistances!!0) (mergeTimes!!0) $ test + 1
-        -- result2 = test2 - test
         (x1, x2) = functionRoot (-1) ((mergeTimes!!0)) (0-(mergeDistances!!0))
         check = (ceiling x2) - (ceiling x1)
     print times
@@ -24,9 +20,6 @@ main = do
     print result
     print mergeTimes
     print mergeDistances
-    -- print test
-    -- print test2
-    -- print result3
     print check
     hClose handle
 
