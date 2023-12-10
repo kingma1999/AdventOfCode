@@ -23,9 +23,9 @@ main = do
     handle <- openFile "input.txt" ReadMode
     contents <- hGetContents handle
     let linesOfFiles = lines contents
-        hands = sort $ map (\x -> readHand x rankParser) linesOfFiles 
+        hands = sort $ map (readHand rankParser) linesOfFiles 
         stonks = sum $ winnings (reverse hands) 1
-        handsJoker = sort $ map (\x -> readHand x rankParserJoker) linesOfFiles 
+        handsJoker = sort $ map (readHand rankParserJoker) linesOfFiles 
         stonksJoker = sum $ winnings (reverse handsJoker) 1
     -- print hands
     print stonks
@@ -60,8 +60,8 @@ rankParserJoker x
     | x == 'J' = Card Joker
     | otherwise = rankParser x
 
-readHand :: String -> (Char -> Card) -> Hand
-readHand string parser = Hand hnds (gradeCards hnds) (read bd)
+readHand :: (Char -> Card) -> String -> Hand
+readHand parser string = Hand hnds (gradeCards hnds) (read bd)
     where 
         [crds, bd] = words string
         hnds = map parser crds
