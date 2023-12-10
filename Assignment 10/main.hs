@@ -34,13 +34,19 @@ data Dijkstra = Dijkstra {
 main = do  
     handle <- openFile "input.txt" ReadMode
     contents <- hGetContents handle
-    let map = lines contents
-        coordS = findS map (Coord 0 0)
-        (finDijk, maps) = dijkstraIter map (Dijkstra 0 North coordS [])
+    let mapI = lines contents
+        coordS = findS mapI (Coord 0 0)
+        (finDijk, maps) = dijkstraIter mapI (Dijkstra 0 North coordS []) coordS -- Change east to north
+        sLessMap = upMap maps coordS 'I' -- be smart about f
+        scoreL = map (countYtoY False []) sLessMap
+        score = sum $ map sum $ scoreL
     print coordS
     print finDijk
-    print maps
+    print sLessMap
     print $ div (step finDijk) 2
+    print scoreL
+    print score
+
     hClose handle
 
 (<+>) :: Dir -> Int -> Dir
@@ -58,7 +64,7 @@ dirToCoord dijkstra map
 
 nextDir :: Dir -> Coord -> [[Char]] -> Dir
 nextDir dir coord map
-    | (coordToChar coord map) == 'S' = North
+    | (coordToChar coord map) == 'S' = North -- Follow uppermost comment
     | dir == North = case (coordToChar coord map) of 
                      '|' -> North
                      '7' -> West
@@ -96,13 +102,24 @@ replace f i [] = []
 replace2D :: (a -> a) -> (Int, Int) -> [[a]] -> [[a]]
 replace2D f (x,y) = replace (replace f y) x
 
-upMap :: [[Char]] -> Coord -> [[Char]]
-upMap map coord = replace2D (const 'Y') (xCoord coord, yCoord coord) map
+upMap :: [[Char]] -> Coord -> Char -> [[Char]]
+upMap map coord ref = replace2D (const ref) (yCoord coord, xCoord coord) map
 
-dijkstraIter :: [[Char]] -> Dijkstra -> (Dijkstra, [[Char]])
-dijkstraIter map dijkstra
-    | coordToChar (coord dijkstra) map == 'S' && passed dijkstra /= [] = (dijkstra, map)
-    | otherwise = dijkstraIter map $ Dijkstra newStep newDir newCoord newPassed
+charMapper :: Char -> Char
+charMapper x = case x of
+                'F' -> 'f'
+                '7' -> 't'
+                'L' -> 'l'
+                'J' -> 'j'
+                '|' -> 'I'
+                '-' -> '='
+                'S' -> 'S'
+                _ -> error "dum dum"
+
+dijkstraIter :: [[Char]] -> Dijkstra -> Coord -> (Dijkstra, [[Char]])
+dijkstraIter map dijkstra begin
+    | coord dijkstra == begin && passed dijkstra /= [] = (dijkstra, map)
+    | otherwise = dijkstraIter (upMap map (coord dijkstra) (charMapper (coordToChar (coord dijkstra) map))) (Dijkstra newStep newDir newCoord newPassed) begin
     where
         newDir = nextDir (dir dijkstra) newCoord map
         newStep = step dijkstra + 1
@@ -114,3 +131,16 @@ findS ((x:xs):ys) coord
     | x == 'S' = coord
     | xs == [] = findS ys (coord {yCoord = yCoord coord + 1, xCoord = 0})
     | otherwise = findS ((xs):ys) (coord {xCoord = xCoord coord + 1})
+
+countYtoY :: Bool -> [Char] -> [Char] -> [Int]
+countYtoY _ _ [] = []
+countYtoY ind waitingOn (x:xs)
+    | x == 'I' = 0 : countYtoY (not ind) [] xs 
+    | x == 'f' = 0 : countYtoY ind ['j'] xs
+    | x == 'l' = 0 : countYtoY ind ['t'] xs
+    | x == '=' = 0 : countYtoY ind waitingOn xs
+    | x == wait = 0 : countYtoY (not ind) [] xs
+    | (x == 'j' || x == 't') && x /= wait = 0 : countYtoY ind [] xs
+    | otherwise = (if ind then 1 else 0) : countYtoY ind [] xs
+    where
+        wait = if waitingOn /= [] then (waitingOn!!0) else 'Y'
